@@ -23,7 +23,10 @@ function getPathFromRoot (pathname) {
 /**
  * @typedef ModuleRule
  * @property {Regex} test
- * @property {String} loader
+ * @property {string} loader
+ * @property {string} [exclude]
+ * @property {string[]} [use]
+ * @property {?} type
  */
 
 /**
@@ -32,6 +35,7 @@ function getPathFromRoot (pathname) {
 const commonRules = [
   {
     test: /\.(js|jsx)$/i,
+    exclude: /node_modules/,
     loader: 'babel-loader'
   },
   {
@@ -43,19 +47,26 @@ const commonRules = [
     use: [stylesHandler, 'css-loader', 'sass-loader']
   },
   {
-    test: /\.(eot|svg|ttf|woff|woff2|png|jpg|gif)$/i
+    test: /\.(png|svg|jpg|jpeg|gif)$/i,
+    type: 'asset/resource'
+  },
+  {
+    test: /\.(woff|woff2|eot|ttf|otf)$/i,
+    type: 'asset/resource'
   }
 ]
 
 const vueRules = [
   {
     test: /\.vue$/,
-    loader: 'vue-loader'
+    use: ['vue-loader']
   }
 ]
 
 const webpackBundleConfig = {
   mode: isProduction ? 'production' : 'development',
+
+  devtool: isProduction ? 'source-map' : 'eval-cheap-module-source-map',
 
   entry: getPathFromRoot('src/main.js'),
 
@@ -74,8 +85,19 @@ const webpackBundleConfig = {
           filename: 'index.html' /* output filename, */
         }
       ]
+    }),
+    new webpack.HotModuleReplacementPlugin(),
+    new webpack.DefinePlugin({
+      __VUE_OPTIONS_API__: true,
+      __VUE_PROD_DEVTOOLS__: true
     })
   ],
+
+  resolve: {
+    alias: {
+      '@': getPathFromRoot('src')
+    }
+  },
 
   module: {
     rules: [
@@ -90,8 +112,13 @@ module.exports = () => {
     /* setup to prd */
   } else {
     webpackBundleConfig.devServer = {
+      /* https://webpack.js.org/configuration/dev-server/ */
+      contentBase: getPathFromRoot('docs'),
+      host: 'localhost',
+      port: 8080,
       open: true,
-      host: 'localhost'
+      compress: false,
+      hot: true
     }
   }
   return webpackBundleConfig
