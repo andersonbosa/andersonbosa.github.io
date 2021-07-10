@@ -64,4 +64,5 @@ typings/
 .idea
 
 # Dist and builds
-# dist
+dist
+dist/
